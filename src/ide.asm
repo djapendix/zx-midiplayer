@@ -109,7 +109,7 @@ ide_driver_select:
     ld hl, idedrv_nemoide                                   ;
     jr .setup                                               ;
 .smuc:
-    ld a, #77 : ld bc, #ffba : call trdos_out               ;
+    ld a, #77 : ld bc, #ffba : call off_trdos_out               ;
     ld hl, idedrv_smuc                                      ;
     jr .setup                                               ;
 .setup:
@@ -164,7 +164,7 @@ idedrv_nemoide_out_lbaex_drive_head:
     ret                                  ;
 idedrv_smuc_out_lbaex_drive_head:
     ld bc, #febe                         ; Ide_Reg_DriveHead
-    jp trdos_out                         ;
+    jp off_trdos_out                         ;
 
 idedrv_divide_out_command:
     ld bc, #ffbf                         ; Ide_Reg_Command
@@ -176,7 +176,7 @@ idedrv_nemoide_out_command:
     ret                                  ;
 idedrv_smuc_out_command:
     ld bc, #ffbe                         ; Ide_Reg_Command
-    jp trdos_out                         ;
+    jp off_trdos_out                         ;
 
 idedrv_divide_in_status:
     ld bc, #ffbf                         ; Ide_Reg_Status
@@ -188,8 +188,16 @@ idedrv_nemoide_in_status:
     ret                                  ;
 idedrv_smuc_in_status:
     ld bc, #ffbe                         ; Ide_Reg_Status
-    jp trdos_in                          ;
-
+    jp off_trdos_in                          ;
+;=========================================
+;For SMUC v2 (without call to ROM/trDos   ;
+off_trdos_in:
+    in a, (c)                            ;
+    ret                                  ;
+off_trdos_out:
+    out (c), a                           ;
+    ret                                  ;
+;=========================================
 ; IN  - A    - sectors count
 ; IN  - EIX  - lba
 ; OUT - AF   - garbage
@@ -231,16 +239,16 @@ idedrv_nemoide_out_sector_count_lba:
 ; OUT - HL   - garbage
 idedrv_smuc_out_sector_count_lba:
     ld bc, #fabe                         ; Ide_Reg_Sectors
-    call trdos_out                       ;
+    call off_trdos_out                       ;
     ld a, ixl                            ;
     ld b, #fb                            ; Ide_Reg_Lbalo
-    call trdos_out                       ;
+    call off_trdos_out                       ;
     ld a, ixh                            ;
     ld b, #fc                            ; Ide_Reg_Lbamid
-    call trdos_out                       ;
+    call off_trdos_out                       ;
     ld a, e                              ;
     ld b, #fd                            ; Ide_Reg_Lbahi
-    jp trdos_out                         ;
+    jp off_trdos_out                         ;
 
 ; IN  - HL  - dst address
 ; OUT - HL  - next untouched dst address
@@ -281,12 +289,12 @@ idedrv_smuc_read_256b:
     ld ixl, 0                            ;
     ld c, #be                            ;
 1:  ld b, #f8                            ; Ide_Reg_Data lo
-    call trdos_in                        ;
+    call off_trdos_in                        ;
     ld (de), a                           ;
     inc de                               ;
     dec ixl                              ;
     ld b, #d8                            ; Ide_Reg_Data hi
-    call trdos_in                        ;
+    call off_trdos_in                        ;
     ld (de), a                           ;
     inc de                               ;
     dec ixl                              ;
